@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import rospy
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     landmark_pose.position.x = 0.5
     landmark_pose.orientation.x = landmark_pose.orientation.y = landmark_pose.orientation.z = landmark_pose.orientation.w = 1
     M = Homogeneous(listener.pose) * Homogeneous(landmark_pose)
-    
+
     # get XYZ - RPY
     label = ['x','y','z','R','P','Y']
     values = list(array(M[:3,3]).flatten()) + list(euler_from_matrix(M))
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         # update in Gazebo
         state.pose = toPoseMsg(M)
         pose_update.call(state)
-        
+
         rate.sleep()        
         
         #print M
