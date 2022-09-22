@@ -23,15 +23,16 @@ def circle(step=50, radius=30):
 
 
 def line_x(start=-10, end=10, b=-1):
-    x = np.linspace(start, end, 40)
+    x = np.linspace(start, end, 100)
     y = x * 0 + b
     return x, y
 
 
 def line_y(start=-10, end=10, b=-1):
-    y = np.linspace(start, end, 40)
+    y = np.linspace(start, end, 100)
     x = y * 0 + b
     return x, y
+
 
 def generate_squre(a=5):
     list_x = []
@@ -62,17 +63,11 @@ def generate_squre(a=5):
 
     return list_square
 
+
 def Homogeneous(pose):
     R = matrix(quaternion_matrix([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w]))
     t = matrix(translation_matrix([pose.position.x, pose.position.y, pose.position.z]))
     return t * R
-
-
-def toPoseMsg(M):
-    pose = Pose()
-    pose.position.x, pose.position.y, pose.position.z = array(M[:3, 3]).flatten()
-    pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = quaternion_from_matrix(M).flatten()
-    return pose
 
 
 class Listener:
@@ -98,21 +93,12 @@ class Listener:
                 self.pose = msg.pose[i]
                 break
 
-    def listenVelocity(self):
-        # start listening to velocities
-        self.sub.unregister()
-        self.sub = rospy.Subscriber('landmark_vel', Twist, self.vel_callback)
-
-    def vel_callback(self, msg):
-        self.linear = [self.dt * v for v in [msg.linear.x, msg.linear.y, msg.linear.z]]
-        self.angular = [self.dt * v for v in [msg.angular.x, msg.angular.y, msg.angular.z]]
-
 
 if __name__ == '__main__':
 
     rospy.init_node('calib_bridge')
     dt = 0.1
-    rate = rospy.Rate(10)
+    rate = rospy.Rate(24)
 
     # try to get camera link to spawn landmark
     listener = Listener(dt)
@@ -123,14 +109,6 @@ if __name__ == '__main__':
         count += 1
         rate.sleep()
 
-    if listener.cam_link != '':
-        print('Found camera link at %s' % listener.cam_link)
-    else:
-        print('Could not find camera link, spawning landmark at (0,0,0.5)')
-
-    listener.listenVelocity()
-
-    # spawn model aligned at 0.5m in front of camera
     landmark_pose = Pose()
     landmark_pose.position.x = 0.5
     landmark_pose.orientation.x = landmark_pose.orientation.y = landmark_pose.orientation.z = landmark_pose.orientation.w = 1
@@ -157,9 +135,6 @@ if __name__ == '__main__':
         points_trase = circle(200, 30)
     else:
         points_trase = generate_squre(5)
-
-
-
     pos = 0
     position = Pose()
     position.position.z = center_point[2]
@@ -172,9 +147,6 @@ if __name__ == '__main__':
         if pos >= len(points_trase):
             pos = 0
 
-
         state.pose = position
         pose_update.call(state)
         rate.sleep()
-
-        # print M
