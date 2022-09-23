@@ -2,12 +2,9 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import rospy
-from gazebo_msgs.srv import SetModelState, SpawnModel
-from gazebo_msgs.msg import LinkStates, ModelState
-from geometry_msgs.msg import Pose, Twist
-from tf.transformations import quaternion_matrix, translation_matrix, quaternion_from_matrix, euler_matrix, \
-    euler_from_matrix
-from numpy import matrix, array
+from gazebo_msgs.srv import SetModelState
+from gazebo_msgs.msg import  ModelState
+from geometry_msgs.msg import Pose
 from os import system
 
 
@@ -37,30 +34,31 @@ def line_y(start=-10, end=10, b=-1, iter1=40):
 
 
 def generate_squre(b=5):
-    a = b/2
-    list_iter = []
-    list_distance = []
+    a = b / 2
+    list_iter_distance = []
     list_square = []
     move_plan = [[-a, a, -a], [-a, a, a], [a, -a, a], [a, -a, -a]]
     for i in range(len(move_plan)):
         current_plan = move_plan[i]
         if i % 2 == 0:
-            x, y, iter1, distance = line_x(current_plan[0], current_plan[1], current_plan[2])
+            x, y, iter1, dist = line_x(current_plan[0], current_plan[1], current_plan[2])
         else:
-            x, y, iter1, distance = line_y(current_plan[0], current_plan[1], current_plan[2])
-        list_distance.append(distance)
-        list_iter.append(iter1)
+            x, y, iter1, dist = line_y(current_plan[0], current_plan[1], current_plan[2])
+        list_iter_distance.append([iter1, dist])
         for n, m in zip(x, y):
             list_square.append([n, m])
-    dist_sum = sum(list_distance)
-    iter_sum = sum(list_iter)
+    iter_sum, dist_sum = 0, 0
+    for i in list_iter_distance:
+        iter_sum += i[0]
+        dist_sum += i[1]
+
     return list_square, iter_sum, dist_sum
 
 
 def count_rospy_rate(v=2, iterations_move=100, s=5):
     distance_per_iter = s / iterations_move
-    f = v / distance_per_iter
-    return f
+    frequency = v / distance_per_iter
+    return frequency
 
 
 if __name__ == '__main__':
@@ -86,7 +84,7 @@ if __name__ == '__main__':
     # mode = rospy.get_param('flight_mode')
 
     center_point = [0, 0, 5]
-    mode = 3
+    mode = 2
     if mode == 1:
         points_trase, counter_iterations, distance = circle(200, 30)
     else:
