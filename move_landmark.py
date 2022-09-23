@@ -11,133 +11,92 @@ from numpy import matrix, array
 from os import system
 
 
-def circle(step=50, radius=30):
-    alpha = np.linspace(0, 2 * np.pi, step)
+def circle(iter1=50, radius=30):
+    alpha = np.linspace(0, 2 * np.pi, iter1)
     list_spiral = []
     r = radius
     x = np.round(r * np.cos(alpha))
     y = np.round(r * np.sin(alpha))
     for i, j in zip(x, y):
         list_spiral.append([i, j])
-    return list_spiral
+    return list_spiral, iter1, 2 * np.pi * radius
 
 
-def line_x(start=-10, end=10, b=-1):
-    x = np.linspace(start, end, 100)
+def line_x(start=-10, end=10, b=-1, iter1=40):
+    x = np.linspace(start, end, iter1)
     y = x * 0 + b
-    return x, y
+    distance = end - start
+    return x, y, iter1, np.abs(distance)
 
 
-def line_y(start=-10, end=10, b=-1):
-    y = np.linspace(start, end, 100)
+def line_y(start=-10, end=10, b=-1, iter1=40):
+    y = np.linspace(start, end, iter1)
     x = y * 0 + b
-    return x, y
+    distance = end - start
+    return x, y, iter1, np.abs(distance)
 
 
-def generate_squre(a=5):
-    list_x = []
-    list_y = []
-    x, y = line_x(-a, a, -a)
-    for n, m in zip(x, y):
-        list_x.append(n)
-        list_y.append(m)
-
-    x, y = line_y(-a, a, a)
-    for n, m in zip(x, y):
-        list_x.append(n)
-        list_y.append(m)
-
-    x, y = line_x(a, -a, a)
-    for n, m in zip(x, y):
-        list_x.append(n)
-        list_y.append(m)
-
-    x, y = line_y(a, -a, -a)
-    for n, m in zip(x, y):
-        list_x.append(n)
-        list_y.append(m)
-
+def generate_squre(b=5):
+    a = b/2
+    list_iter = []
+    list_distance = []
     list_square = []
-    for i, j in zip(list_x, list_y):
-        list_square.append([i, j])
+    move_plan = [[-a, a, -a], [-a, a, a], [a, -a, a], [a, -a, -a]]
+    for i in range(len(move_plan)):
+        current_plan = move_plan[i]
+        if i % 2 == 0:
+            x, y, iter1, distance = line_x(current_plan[0], current_plan[1], current_plan[2])
+        else:
+            x, y, iter1, distance = line_y(current_plan[0], current_plan[1], current_plan[2])
+        list_distance.append(distance)
+        list_iter.append(iter1)
+        for n, m in zip(x, y):
+            list_square.append([n, m])
+    dist_sum = sum(list_distance)
+    iter_sum = sum(list_iter)
+    return list_square, iter_sum, dist_sum
 
-    return list_square
 
-
-def Homogeneous(pose):
-    R = matrix(quaternion_matrix([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w]))
-    t = matrix(translation_matrix([pose.position.x, pose.position.y, pose.position.z]))
-    return t * R
-
-
-class Listener:
-    def __init__(self, dt):
-        self.dt = dt
-        self.cam_link = ''
-        self.sub = rospy.Subscriber('/gazebo/link_states', LinkStates, self.link_callback)
-        self.pose = Pose()
-        self.pose.orientation.w = 1
-        self.pose.orientation.y = -1
-        self.pose.position.z = 0
-        self.msg_ok = False
-        self.linear = [0, 0, 0]
-        self.angular = [0, 0, 0]
-
-    def link_callback(self, msg):
-        self.msg_ok = True
-        # try to find a link called camera or something
-        for i, name in enumerate(msg.name):
-            if 'camera' in name.split('::')[1]:
-                # register this link as camera
-                self.cam_link = name
-                self.pose = msg.pose[i]
-                break
+def count_rospy_rate(v=2, iterations_move=100, s=5):
+    distance_per_iter = s / iterations_move
+    f = v / distance_per_iter
+    return f
 
 
 if __name__ == '__main__':
 
-    rospy.init_node('calib_bridge')
-    dt = 0.1
-    rate = rospy.Rate(24)
-
-    # try to get camera link to spawn landmark
-    listener = Listener(dt)
-
-    count = 0
-    while not rospy.is_shutdown() and not listener.msg_ok and count < 100:
-        print(listener.msg_ok)
-        count += 1
-        rate.sleep()
+    rospy.init_node('target_control')
 
     landmark_pose = Pose()
     landmark_pose.position.x = 0.5
     landmark_pose.orientation.x = landmark_pose.orientation.y = landmark_pose.orientation.z = landmark_pose.orientation.w = 1
-    M = Homogeneous(listener.pose) * Homogeneous(landmark_pose)
 
-    # get XYZ - RPY
-    label = ['x', 'y', 'z', 'R', 'P', 'Y']
-    values = list(array(M[:3, 3]).flatten()) + list(euler_from_matrix(M))
-
-    sdf = rospy.get_param('landmark_file')
-    cmd_line = 'rosrun gazebo_ros spawn_model -model landmark -sdf -file ' + sdf
-    for i in range(6):
-        cmd_line += ' -' + label[i] + ' ' + str(values[i])
+    # sdf = rospy.get_param('target_sdf')
+    # tx = rospy.get_param('tx')
+    # ty = rospy.get_param('ty')
+    # tz = rospy.get_param('tz')
+    sdf = '/home/bartosz/catkin_ws/src/calibration_gazebo/sdf/landmark.sdf'
+    tx, ty, tz = '0', '0', '2'
+    cmd_line = 'rosrun gazebo_ros spawn_model -model target -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' + tz + ' -R 0 -P 0 -Y 0 '
     system(cmd_line)
 
     pose_update = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     state = ModelState()
-    state.model_name = 'landmark'
-    mode = rospy.get_param('flight_mode')
+    state.model_name = 'target'
+    # mode = rospy.get_param('flight_mode')
 
     center_point = [0, 0, 5]
-
+    mode = 3
     if mode == 1:
-        points_trase = circle(200, 30)
+        points_trase, counter_iterations, distance = circle(200, 30)
     else:
-        points_trase = generate_squre(5)
+        points_trase, counter_iterations, distance = generate_squre(5)
     pos = 0
     position = Pose()
     position.position.z = center_point[2]
+    velocity = 2
+    freq_rate = count_rospy_rate(velocity, counter_iterations, distance)
+    rate = rospy.Rate(freq_rate)
     while not rospy.is_shutdown():
         current_xy = points_trase[pos]
         desired_xy = [current_xy[0] + center_point[0], current_xy[1] + center_point[1]]

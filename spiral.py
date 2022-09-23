@@ -2,62 +2,57 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def line_x(start=-10, end=10, b=-1):
-    x = np.linspace(start, end, 40)
+def line_x(start=-10, end=10, b=-1, iter1=40):
+    x = np.linspace(start, end, iter1)
     y = x * 0 + b
-    return x, y
+    distance = end - start
+    return x, y, iter1, np.abs(distance)
 
 
-def line_y(start=-10, end=10, b=-1):
-    y = np.linspace(start, end, 40)
+def line_y(start=-10, end=10, b=-1, iter1=40):
+    y = np.linspace(start, end, iter1)
     x = y * 0 + b
-    return x, y
+    distance = end - start
+    return x, y, iter1, np.abs(distance)
 
-def generate_squre(a=5):
-    list_x = []
-    list_y = []
-    x, y = line_x(-a, a, -a)
-    for n, m in zip(x, y):
-        list_x.append(n)
-        list_y.append(m)
 
-    x, y = line_y(-a, a, a)
-    for n, m in zip(x, y):
-        list_x.append(n)
-        list_y.append(m)
-
-    x, y = line_x(a, -a, a)
-    for n, m in zip(x, y):
-        list_x.append(n)
-        list_y.append(m)
-
-    x, y = line_y(a, -a, -a)
-    for n, m in zip(x, y):
-        list_x.append(n)
-        list_y.append(m)
-
+def generate_squre_short(a=5):
+    list_iter = []
+    list_distance = []
     list_square = []
-    for i, j in zip(list_x, list_y):
-        list_square.append([i, j])
-    print(list_square)
-    # return list_square
+    move_plan = [[-a, a, -a], [-a, a, a], [a, -a, a], [a, -a, -a]]
+    for i in range(len(move_plan)):
+        current_plan = move_plan[i]
+        x, y, iter1, distance = line_x(current_plan[0], current_plan[1], current_plan[2])
+        list_distance.append(distance)
+        list_iter.append(iter1)
+        for n, m in zip(x, y):
+            list_square.append([n, m])
+    dist_sum = sum(list_distance)
+    iter_sum = sum(list_iter)
+    return list_square, iter_sum, dist_sum
 
-def circle(step=50, radius=30):
-    alpha = np.linspace(0, 2 * np.pi, step)
+def count_rospy_rate(v=2, iterations_move=100, s=5):
+    distance_per_iter = s/iterations_move
+    f = v / distance_per_iter
+    return f
+
+
+def circle(iter1=50, radius=30):
+    alpha = np.linspace(0, 2 * np.pi, iter1)
     list_spiral = []
     r = radius
     x = np.round(r * np.cos(alpha))
     y = np.round(r * np.sin(alpha))
     for i, j in zip(x, y):
         list_spiral.append([i, j])
-
-    plt.plot(x, y, "o")
-
-    plt.show()
-    print(list_spiral)
+    return list_spiral, iter1, 2*np.pi*radius
 
 
 def main():
-    generate_squre()
+    a, b, distance = generate_squre_short()
+    print(b, distance)
+
+
 if __name__ == "__main__":
     main()

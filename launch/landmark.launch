@@ -1,24 +1,21 @@
 <?xml version="1.0"?>
 <launch>
+
+    <arg name="tx" default="5"/>
+    <arg name="ty" default="0"/>
+    <arg name="tz" default="20"/>
+    <arg name="target_sdf" default="$(find calibration_gazebo)/sdf/no_gravity_iris/no_gravity_iris.sdf"/>
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="gui" value="true" />
-    <arg name="paused" value="false" />
-  </include>
-        
-    <group ns="calibration_gazebo">
-        <param name="use_gui" value="True"/>
-        <!-- Run GUI to publish landmark velocity -->
-<!--         <node name="velocity_publisher" pkg="slider_publisher" type="slider_publisher" output="screen" respawn="true"> -->
-<!--             <param name="file" value="$(find slider_publisher)/examples/Twist.yaml"/> -->
-<!--             <remap from="/cmd_vel" to="landmark_vel"/> -->
-<!--         </node>  -->
-        
-        <!-- Load landmark description for velocities-->
-        <param name="landmark_file" value="$(find calibration_gazebo)/sdf/landmark.sdf"/>
-        <param name="flight_mode" value="2"/>
-        <!-- Bridge from velocity to pose -->
-        <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py"/>
-        
-  </group>
+        <arg name="gui" value="true" />
+        <arg name="paused" value="false" />
+    </include>
+
+
+<!--    <param name="use_gui" value="True"/>-->
+
+<!--    <param name="flight_mode" value="2"/>-->
+<!--    &lt;!&ndash; Bridge from velocity to pose &ndash;&gt;-->
+    <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py"/>
+
           
 </launch>
