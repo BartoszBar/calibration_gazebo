@@ -15,6 +15,22 @@ def line_y(start=-10, end=10, b=-1, iter1=40):
     distance = end - start
     return x, y, iter1, np.abs(distance)
 
+def generate_line(a=10, iterations=40):
+    move_plan = [[0, a, 0, iterations], [a, 0, 0, iterations]]
+    list_iter_distance = []
+    list_square = []
+    for i in range(len(move_plan)):
+        current_plan = move_plan[i]
+        x, y, iter1, dist = line_x(current_plan[0], current_plan[1], current_plan[2], current_plan[3])
+        list_iter_distance.append([iter1, dist])
+        for n, m in zip(x, y):
+            list_square.append([n, m])
+    iter_sum, dist_sum = 0, 0
+    for i in list_iter_distance:
+        iter_sum += i[0]
+        dist_sum += i[1]
+    return list_square, iter_sum, dist_sum
+
 
 def generate_squre(b=5):
     a = b / 2
@@ -56,8 +72,8 @@ def circle(iter1=50, radius=30):
 
 
 def main():
-    a, b, distance = generate_squre()
-    print(b, distance)
+    a, b, distance = generate_line(iterations=4)
+    print(a)
     # print(b, distance)
 
 

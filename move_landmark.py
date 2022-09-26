@@ -22,16 +22,32 @@ def circle(iter1=50, radius=30):
 def line_x(start=-10, end=10, b=-1, iter1=40):
     x = np.linspace(start, end, iter1)
     y = x * 0 + b
-    distance = end - start
-    return x, y, iter1, np.abs(distance)
+    dist = end - start
+    return x, y, iter1, np.abs(dist)
 
 
 def line_y(start=-10, end=10, b=-1, iter1=40):
     y = np.linspace(start, end, iter1)
     x = y * 0 + b
-    distance = end - start
-    return x, y, iter1, np.abs(distance)
+    dist = end - start
+    return x, y, iter1, np.abs(dist)
 
+
+def generate_line(a=10, iterations=40):
+    move_plan = [[0, a, 0, iterations], [a, 0, 0, iterations]]
+    list_iter_distance = []
+    list_square = []
+    for i in range(len(move_plan)):
+        current_plan = move_plan[i]
+        x, y, iter1, dist = line_x(current_plan[0], current_plan[1], current_plan[2], current_plan[3])
+        list_iter_distance.append([iter1, dist])
+        for n, m in zip(x, y):
+            list_square.append([n, m])
+    iter_sum, dist_sum = 0, 0
+    for i in list_iter_distance:
+        iter_sum += i[0]
+        dist_sum += i[1]
+    return list_square, iter_sum, dist_sum
 
 def generate_squre(b=5):
     a = b / 2
@@ -61,6 +77,7 @@ def count_rospy_rate(v=2, iterations_move=100, s=5):
     return frequency
 
 
+
 if __name__ == '__main__':
 
     rospy.init_node('target_control')
@@ -84,11 +101,13 @@ if __name__ == '__main__':
     # mode = rospy.get_param('flight_mode')
 
     center_point = [0, 0, 5]
-    mode = 2
+    mode = 3
     if mode == 1:
         points_trase, counter_iterations, distance = circle(200, 30)
-    else:
+    elif mode == 2:
         points_trase, counter_iterations, distance = generate_squre(5)
+    else:
+        points_trase, counter_iterations, distance = generate_line(10, 100)
     pos = 0
     position = Pose()
     position.position.z = center_point[2]
