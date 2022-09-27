@@ -75,8 +75,11 @@ def generate_squre(b=5):
 
 
 def count_rospy_rate(v=2, iterations_move=100, s=5):
-    distance_per_iter = s / iterations_move
-    frequency = v / distance_per_iter
+    if v == 0 or iterations_move == 0 or s == 0:
+        frequency = 1
+    else:
+        distance_per_iter = s / iterations_move
+        frequency = v / distance_per_iter
     return frequency
 
 
@@ -104,17 +107,19 @@ def publisher(radar_local_x, radar_local_y, radar_local_z):
     target_position = Point()
     target_position_pub = rospy.Publisher(
         '/radar/local_target_position', Point, queue_size=1)
-    target_position.x = radar_local_x
-    target_position.y = radar_local_y
-    target_position.z = radar_local_z
-    target_position_pub.publish(target_position)
 
     target_global_position = GlobalPositionTarget()
     target_global_position_pub = rospy.Publisher(
         'radar/global_target_position', GlobalPositionTarget, queue_size=1
     )
+
+    target_position.x = radar_local_x
+    target_position.y = radar_local_y
+    target_position.z = radar_local_z
     target_global_position.latitude, target_global_position.longitude, target_global_position.altitude = \
         local_to_global(v_n=radar_local_x, v_e=radar_local_y, h=radar_local_z)
+
+    target_position_pub.publish(target_position)
     target_global_position_pub.publish(target_global_position)
 
 
@@ -124,7 +129,8 @@ if __name__ == '__main__':
 
     landmark_pose = Pose()
     landmark_pose.position.x = 0.5
-    landmark_pose.orientation.x = landmark_pose.orientation.y = landmark_pose.orientation.z = landmark_pose.orientation.w = 1
+    landmark_pose.orientation.x = landmark_pose.orientation.y \
+        = landmark_pose.orientation.z = landmark_pose.orientation.w = 1
 
     # sdf = rospy.get_param('target_sdf')
     # tx = rospy.get_param('tx')
@@ -141,17 +147,19 @@ if __name__ == '__main__':
     # mode = rospy.get_param('flight_mode')
 
     center_point = [0, 0, 5]
-    mode = 2
+    mode = 0
     if mode == 1:
         points_trase, counter_iterations, distance = circle(200, 30)
     elif mode == 2:
         points_trase, counter_iterations, distance = generate_squre(5)
     else:
-        points_trase, counter_iterations, distance = generate_line(10, 100)
+        state_position = [[3, 3]]
+        points_trase, counter_iterations, distance = state_position, 0, 0
+
     pos = 0
     position = Pose()
     position.position.z = center_point[2]
-    velocity = 2
+    velocity = 2 # velocity in m/s
     freq_rate = count_rospy_rate(velocity, counter_iterations, distance)
     rate = rospy.Rate(freq_rate)
     while not rospy.is_shutdown():
