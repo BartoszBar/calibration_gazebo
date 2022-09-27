@@ -3,9 +3,11 @@
 import numpy as np
 import rospy
 from gazebo_msgs.srv import SetModelState
-from gazebo_msgs.msg import  ModelState
-from geometry_msgs.msg import Pose
+from gazebo_msgs.msg import ModelState
+from geometry_msgs.msg import Pose, Point
+from mavros_msgs.msg import GlobalPositionTarget
 from os import system
+import math
 
 
 def circle(iter1=50, radius=30):
@@ -49,6 +51,7 @@ def generate_line(a=10, iterations=40):
         dist_sum += i[1]
     return list_square, iter_sum, dist_sum
 
+
 def generate_squre(b=5):
     a = b / 2
     list_iter_distance = []
@@ -77,6 +80,43 @@ def count_rospy_rate(v=2, iterations_move=100, s=5):
     return frequency
 
 
+def local_to_global(lat_now=47.397742, lon_now=8.5455934, altitude_now=535.3129164476948, v_n=0, v_e=0, h=0):
+    """
+    :param lat_now: latitude of drone on start point (when it is unarmed)
+    :param lon_now: longitude of drone on start point (when it is unarmed)
+    :param altitude_now: altitude of drone on start point (when it is unarmed)
+    :param v_n: vector in x (local x position)
+    :param v_e: vector in y (local y position)
+    :param h: vector of height in local position
+    :return:
+    """
+
+    const_radious_of_earth = 6371000
+    lat_now_rad = math.radians(lat_now)
+    lon_now_rad = math.radians(lon_now)
+    lat_res = math.degrees(lat_now_rad + v_n / const_radious_of_earth)
+    lon_res = math.degrees(lon_now_rad + v_e / const_radious_of_earth * np.cos(lat_now_rad))
+    altitude_next = altitude_now + h
+    return lat_res, lon_res, altitude_next
+
+
+def publisher(radar_local_x, radar_local_y, radar_local_z):
+    target_position = Point()
+    target_position_pub = rospy.Publisher(
+        '/radar/local_target_position', Point, queue_size=1)
+    target_position.x = radar_local_x
+    target_position.y = radar_local_y
+    target_position.z = radar_local_z
+    target_position_pub.publish(target_position)
+
+    target_global_position = GlobalPositionTarget()
+    target_global_position_pub = rospy.Publisher(
+        'radar/global_target_position', GlobalPositionTarget, queue_size=1
+    )
+    target_global_position.latitude, target_global_position.longitude, target_global_position.altitude = \
+        local_to_global(v_n=radar_local_x, v_e=radar_local_y, h=radar_local_z)
+    target_global_position_pub.publish(target_global_position)
+
 
 if __name__ == '__main__':
 
@@ -101,7 +141,7 @@ if __name__ == '__main__':
     # mode = rospy.get_param('flight_mode')
 
     center_point = [0, 0, 5]
-    mode = 3
+    mode = 2
     if mode == 1:
         points_trase, counter_iterations, distance = circle(200, 30)
     elif mode == 2:
@@ -119,6 +159,7 @@ if __name__ == '__main__':
         desired_xy = [current_xy[0] + center_point[0], current_xy[1] + center_point[1]]
         position.position.x = desired_xy[0]
         position.position.y = desired_xy[1]
+        publisher(position.position.x, position.position.y, position.position.z)
         pos += 1
         if pos >= len(points_trase):
             pos = 0
