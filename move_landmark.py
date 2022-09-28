@@ -8,6 +8,7 @@ from geometry_msgs.msg import Pose, Point
 from mavros_msgs.msg import GlobalPositionTarget
 from os import system
 import math
+import argparse
 
 
 def circle(iter1=50, radius=30):
@@ -123,6 +124,15 @@ def publisher(radar_local_x, radar_local_y, radar_local_z):
     target_global_position_pub.publish(target_global_position)
 
 
+parser = argparse.ArgumentParser(description='Values of spawn drone, velocity and mode')
+parser.add_argument('-x', '--x', type=float, metavar='', default=0, help='target co-ordinates of x')
+parser.add_argument('-y', '--y', type=float, metavar='', default=0, help='target co-ordinates of y')
+parser.add_argument('-z', '--z', type=float, metavar='', default=2, help='target co-ordinates of z')
+parser.add_argument('-v', '--velocity', type=float, metavar='', default=2, help='velocity of moving target in m/s')
+parser.add_argument('-m', '--mode', type=float, metavar='', default=2,
+                    help='mode of moving target [1 - circle, 2 - square, 3 - line, else: state mode]')
+
+args = parser.parse_args()
 if __name__ == '__main__':
 
     rospy.init_node('target_control')
@@ -137,7 +147,8 @@ if __name__ == '__main__':
     # ty = rospy.get_param('ty')
     # tz = rospy.get_param('tz')
     sdf = '/home/bartosz/catkin_ws/src/calibration_gazebo/sdf/landmark.sdf'
-    tx, ty, tz = '0', '0', '2'
+    # tx, ty, tz = '0', '0', '2'
+    tx, ty, tz = str(args.x), str(args.y), str(args.z)
     cmd_line = 'rosrun gazebo_ros spawn_model -model target -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' + tz + ' -R 0 -P 0 -Y 0 '
     system(cmd_line)
 
@@ -147,11 +158,14 @@ if __name__ == '__main__':
     # mode = rospy.get_param('flight_mode')
 
     center_point = [0, 0, 5]
-    mode = 0
+    # mode = 0
+    mode = args.mode
     if mode == 1:
         points_trase, counter_iterations, distance = circle(200, 30)
     elif mode == 2:
         points_trase, counter_iterations, distance = generate_squre(5)
+    elif mode == 3:
+        points_trase, counter_iterations, distance = generate_line(10)
     else:
         state_position = [[3, 3]]
         points_trase, counter_iterations, distance = state_position, 0, 0
@@ -159,7 +173,8 @@ if __name__ == '__main__':
     pos = 0
     position = Pose()
     position.position.z = center_point[2]
-    velocity = 2 # velocity in m/s
+    # velocity = 2  # velocity in m/s
+    velocity = args.velocity
     freq_rate = count_rospy_rate(velocity, counter_iterations, distance)
     rate = rospy.Rate(freq_rate)
     while not rospy.is_shutdown():

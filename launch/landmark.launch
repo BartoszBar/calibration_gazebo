@@ -4,6 +4,7 @@
     <arg name="tx" default="5"/>
     <arg name="ty" default="0"/>
     <arg name="tz" default="20"/>
+
     <arg name="target_sdf" default="$(find calibration_gazebo)/sdf/no_gravity_iris/no_gravity_iris.sdf"/>
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="gui" value="true" />
@@ -15,7 +16,7 @@
 
 <!--    <param name="flight_mode" value="2"/>-->
 <!--    &lt;!&ndash; Bridge from velocity to pose &ndash;&gt;-->
-    <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py"/>
+    <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py" args="-q 0.03 -s 8x6"/>
 
           
 </launch>
