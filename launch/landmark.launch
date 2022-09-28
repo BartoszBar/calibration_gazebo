@@ -1,22 +1,19 @@
 <?xml version="1.0"?>
 <launch>
 
-    <arg name="tx" default="5"/>
+    <arg name="tx" default="0"/>
     <arg name="ty" default="0"/>
-    <arg name="tz" default="20"/>
+    <arg name="tz" default="2"/>
+    <arg name="speed" default="2"/>
+    <arg name="choose_mode" default="2"/>
+    <arg name="choose_sdf" default='/home/bartosz/catkin_ws/src/velocityraptor/models/no_gravity_iris_easy/no_gravity_iris_easy.sdf'/>
 
-    <arg name="target_sdf" default="$(find calibration_gazebo)/sdf/no_gravity_iris/no_gravity_iris.sdf"/>
+    <arg name="target_sdf" default="$(find velocityraptor)/models/no_gravity_iris_easy/no_gravity_iris_easy.sdf"/>
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="gui" value="true" />
         <arg name="paused" value="false" />
     </include>
-
-
-<!--    <param name="use_gui" value="True"/>-->
-
-<!--    <param name="flight_mode" value="2"/>-->
-<!--    &lt;!&ndash; Bridge from velocity to pose &ndash;&gt;-->
-    <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py" args="-q 0.03 -s 8x6"/>
+    <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py" args="-x $(arg tx) -y $(arg ty) -z $(arg tz) -v $(arg speed) -s $(arg choose_sdf) -m $(arg choose_mode) -R 0 -P 0 -Y 0"/>
 
           
 </launch>

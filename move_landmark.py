@@ -129,10 +129,14 @@ parser.add_argument('-x', '--x', type=float, metavar='', default=0, help='target
 parser.add_argument('-y', '--y', type=float, metavar='', default=0, help='target co-ordinates of y')
 parser.add_argument('-z', '--z', type=float, metavar='', default=2, help='target co-ordinates of z')
 parser.add_argument('-v', '--velocity', type=float, metavar='', default=2, help='velocity of moving target in m/s')
+parser.add_argument('-s', '--sdf', type=str, metavar='',
+                    default='/home/bartosz/catkin_ws/src/velocityraptor/models/no_gravity_iris_easy/no_gravity_iris_easy.sdf',
+                    help='model')
 parser.add_argument('-m', '--mode', type=float, metavar='', default=2,
                     help='mode of moving target [1 - circle, 2 - square, 3 - line, else: state mode]')
 
 args = parser.parse_args()
+
 if __name__ == '__main__':
 
     rospy.init_node('target_control')
@@ -146,10 +150,11 @@ if __name__ == '__main__':
     # tx = rospy.get_param('tx')
     # ty = rospy.get_param('ty')
     # tz = rospy.get_param('tz')
-    sdf = '/home/bartosz/catkin_ws/src/calibration_gazebo/sdf/landmark.sdf'
+    sdf = args.sdf
     # tx, ty, tz = '0', '0', '2'
     tx, ty, tz = str(args.x), str(args.y), str(args.z)
-    cmd_line = 'rosrun gazebo_ros spawn_model -model target -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' + tz + ' -R 0 -P 0 -Y 0 '
+    cmd_line = 'rosrun gazebo_ros spawn_model -model target -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' +\
+               tz + ' -R 0 -P 0 -Y 0 '
     system(cmd_line)
 
     pose_update = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
@@ -159,7 +164,9 @@ if __name__ == '__main__':
 
     center_point = [0, 0, 5]
     # mode = 0
-    mode = args.mode
+    # velocity = 2  # velocity in m/s
+    mode = float(args.mode)
+    velocity = float(args.velocity)
     if mode == 1:
         points_trase, counter_iterations, distance = circle(200, 30)
     elif mode == 2:
@@ -173,8 +180,7 @@ if __name__ == '__main__':
     pos = 0
     position = Pose()
     position.position.z = center_point[2]
-    # velocity = 2  # velocity in m/s
-    velocity = args.velocity
+
     freq_rate = count_rospy_rate(velocity, counter_iterations, distance)
     rate = rospy.Rate(freq_rate)
     while not rospy.is_shutdown():
