@@ -139,24 +139,17 @@ parser.add_argument('-m', '--mode', type=float, metavar='', default=2,
 args = parser.parse_args()
 
 if __name__ == '__main__':
-
-    rospy.init_node('target_control' + str(args.name))
+    
+    rospy.init_node('target_control' + str(args.name), anonymous=False)
 
     landmark_pose = Pose()
     landmark_pose.position.x = 0.5
     landmark_pose.orientation.x = landmark_pose.orientation.y \
         = landmark_pose.orientation.z = landmark_pose.orientation.w = 1
 
-    # sdf = rospy.get_param('target_sdf')
-    # tx = rospy.get_param('tx')
-    # ty = rospy.get_param('ty')
-    # tz = rospy.get_param('tz')
     target_name = "target" + str(args.name)
     sdf = args.sdffile
-    # tx, ty, tz = '0', '0', '2'
     tx, ty, tz = str(args.x), str(args.y), str(args.z)
-    # cmd_line = 'rosrun gazebo_ros spawn_model -model target -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' +\
-    #            tz + ' -R 0 -P 0 -Y 0 '
     cmd_line = 'rosrun gazebo_ros spawn_model' + ' -model ' + target_name + ' -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' + \
                tz + ' -R 0 -P 0 -Y 0 '
     system(cmd_line)
@@ -167,10 +160,10 @@ if __name__ == '__main__':
     state.model_name = target_name
 
     center_point = [0, 0, 5]
-    # mode = 0
-    # velocity = 2  # velocity in m/s
+
     mode = float(args.mode)
     velocity = float(args.velocity)
+
     if mode == 1:
         points_trase, counter_iterations, distance = circle(200, 30)
     elif mode == 2:
