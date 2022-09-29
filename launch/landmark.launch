@@ -13,7 +13,7 @@
         <arg name="gui" value="true" />
         <arg name="paused" value="false" />
     </include>
-    <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py" args="-x $(arg tx) -y $(arg ty) -z $(arg tz) -v $(arg speed) -s $(arg choose_sdf) -m $(arg choose_mode) -R 0 -P 0 -Y 0"/>
+<!--    <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py"/>-->
 
-          
+
 </launch>

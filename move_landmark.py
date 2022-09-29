@@ -107,11 +107,11 @@ def local_to_global(lat_now=47.397742, lon_now=8.5455934, altitude_now=535.31291
 def publisher(radar_local_x, radar_local_y, radar_local_z):
     target_position = Point()
     target_position_pub = rospy.Publisher(
-        '/radar/local_target_position', Point, queue_size=1)
+        '/radar/local_target_position' + str(args.name), Point, queue_size=1)
 
     target_global_position = GlobalPositionTarget()
     target_global_position_pub = rospy.Publisher(
-        'radar/global_target_position', GlobalPositionTarget, queue_size=1
+        'radar/global_target_position' + str(args.name), GlobalPositionTarget, queue_size=1
     )
 
     target_position.x = radar_local_x
@@ -128,8 +128,9 @@ parser = argparse.ArgumentParser(description='Values of spawn drone, velocity an
 parser.add_argument('-x', '--x', type=float, metavar='', default=0, help='target co-ordinates of x')
 parser.add_argument('-y', '--y', type=float, metavar='', default=0, help='target co-ordinates of y')
 parser.add_argument('-z', '--z', type=float, metavar='', default=2, help='target co-ordinates of z')
+parser.add_argument('-n', '--name', type=int, metavar='', required=True, default=1, help='numer of target name')
 parser.add_argument('-v', '--velocity', type=float, metavar='', default=2, help='velocity of moving target in m/s')
-parser.add_argument('-s', '--sdf', type=str, metavar='',
+parser.add_argument('-s', '--sdffile', type=str, metavar='',
                     default='/home/bartosz/catkin_ws/src/velocityraptor/models/no_gravity_iris_easy/no_gravity_iris_easy.sdf',
                     help='model')
 parser.add_argument('-m', '--mode', type=float, metavar='', default=2,
@@ -139,7 +140,7 @@ args = parser.parse_args()
 
 if __name__ == '__main__':
 
-    rospy.init_node('target_control')
+    rospy.init_node('target_control' + str(args.name))
 
     landmark_pose = Pose()
     landmark_pose.position.x = 0.5
@@ -150,17 +151,20 @@ if __name__ == '__main__':
     # tx = rospy.get_param('tx')
     # ty = rospy.get_param('ty')
     # tz = rospy.get_param('tz')
-    sdf = args.sdf
+    target_name = "target" + str(args.name)
+    sdf = args.sdffile
     # tx, ty, tz = '0', '0', '2'
     tx, ty, tz = str(args.x), str(args.y), str(args.z)
-    cmd_line = 'rosrun gazebo_ros spawn_model -model target -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' +\
+    # cmd_line = 'rosrun gazebo_ros spawn_model -model target -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' +\
+    #            tz + ' -R 0 -P 0 -Y 0 '
+    cmd_line = 'rosrun gazebo_ros spawn_model' + ' -model ' + target_name + ' -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' + \
                tz + ' -R 0 -P 0 -Y 0 '
     system(cmd_line)
 
     pose_update = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     state = ModelState()
-    state.model_name = 'target'
-    # mode = rospy.get_param('flight_mode')
+    # state.model_name = 'target'
+    state.model_name = target_name
 
     center_point = [0, 0, 5]
     # mode = 0
