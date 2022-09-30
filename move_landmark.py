@@ -3,12 +3,13 @@
 import numpy as np
 import rospy
 from gazebo_msgs.srv import SetModelState
-from gazebo_msgs.msg import ModelState
+from gazebo_msgs.msg import ModelState, ModelStates
 from geometry_msgs.msg import Pose, Point
 from mavros_msgs.msg import GlobalPositionTarget
 from os import system
 import math
 import argparse
+import rosnode
 
 
 def circle(iter1=50, radius=30):
@@ -104,6 +105,11 @@ def local_to_global(lat_now=47.397742, lon_now=8.5455934, altitude_now=535.31291
     return lat_res, lon_res, altitude_next
 
 
+def callback_processes(data):
+    actual_target_names = data.name
+    rospy.loginfo(actual_target_names)
+
+
 def publisher(radar_local_x, radar_local_y, radar_local_z):
     target_position = Point()
     target_position_pub = rospy.Publisher(
@@ -136,12 +142,12 @@ parser.add_argument('-s', '--sdffile', type=str, metavar='',
 parser.add_argument('-m', '--mode', type=float, metavar='', default=2,
                     help='mode of moving target [1 - circle, 2 - square, 3 - line, else: state mode]')
 
-args = parser.parse_args()
-
+args, unknown = parser.parse_known_args()
 if __name__ == '__main__':
-    
-    rospy.init_node('target_control' + str(args.name), anonymous=False)
+    rospy.Subscriber('/gazebo/model_states', ModelStates, callback_processes)
 
+    rospy.init_node('target_control' + str(args.name), anonymous=False)
+    # rospy.loginfo(rosnode.get_node_names())
     landmark_pose = Pose()
     landmark_pose.position.x = 0.5
     landmark_pose.orientation.x = landmark_pose.orientation.y \
@@ -180,6 +186,7 @@ if __name__ == '__main__':
 
     freq_rate = count_rospy_rate(velocity, counter_iterations, distance)
     rate = rospy.Rate(freq_rate)
+
     while not rospy.is_shutdown():
         current_xy = points_trase[pos]
         desired_xy = [current_xy[0] + center_point[0], current_xy[1] + center_point[1]]

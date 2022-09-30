@@ -5,7 +5,8 @@
     <arg name="ty" default="0"/>
     <arg name="tz" default="2"/>
     <arg name="speed" default="2"/>
-    <arg name="choose_mode" default="2"/>
+    <arg name="name" default="1"/>
+    <arg name="mode" default="2"/>
     <arg name="choose_sdf" default='/home/bartosz/catkin_ws/src/velocityraptor/models/no_gravity_iris_easy/no_gravity_iris_easy.sdf'/>
 
     <arg name="target_sdf" default="$(find velocityraptor)/models/no_gravity_iris_easy/no_gravity_iris_easy.sdf"/>
@@ -13,7 +14,7 @@
         <arg name="gui" value="true" />
         <arg name="paused" value="false" />
     </include>
-<!--    <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py"/>-->
+    <node name="landmark_bridge" pkg="calibration_gazebo" type="move_landmark.py"  args="-x $(arg tx) -y $(arg ty) -z $(arg tz) -n $(arg name) -v $(arg speed) -s $(arg choose_sdf) -m $(arg mode)"/>
 
 
 </launch>
