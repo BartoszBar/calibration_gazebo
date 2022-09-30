@@ -174,7 +174,6 @@ if __name__ == '__main__':
             if elem[-1][0:-1] == 'target' and int(elem[-1][-1]) >= 1:
                 index = int(elem[-1][-1]) + 1
                 target_name = "target" + str(index)
-                print(index)
             else:
                 break
             break
