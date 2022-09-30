@@ -9,7 +9,7 @@ from mavros_msgs.msg import GlobalPositionTarget
 from os import system
 import math
 import argparse
-import rosnode
+
 
 
 def circle(iter1=50, radius=30):
@@ -104,20 +104,14 @@ def local_to_global(lat_now=47.397742, lon_now=8.5455934, altitude_now=535.31291
     altitude_next = altitude_now + h
     return lat_res, lon_res, altitude_next
 
-
-def callback_processes(data):
-    actual_target_names = data.name
-    rospy.loginfo(actual_target_names)
-
-
 def publisher(radar_local_x, radar_local_y, radar_local_z):
     target_position = Point()
     target_position_pub = rospy.Publisher(
-        '/radar/local_target_position' + str(args.name), Point, queue_size=1)
+        '/radar/local_target_position' + str(index), Point, queue_size=1)
 
     target_global_position = GlobalPositionTarget()
     target_global_position_pub = rospy.Publisher(
-        'radar/global_target_position' + str(args.name), GlobalPositionTarget, queue_size=1
+        'radar/global_target_position' + str(index), GlobalPositionTarget, queue_size=1
     )
 
     target_position.x = radar_local_x
@@ -134,7 +128,6 @@ parser = argparse.ArgumentParser(description='Values of spawn drone, velocity an
 parser.add_argument('-x', '--x', type=float, metavar='', default=0, help='target co-ordinates of x')
 parser.add_argument('-y', '--y', type=float, metavar='', default=0, help='target co-ordinates of y')
 parser.add_argument('-z', '--z', type=float, metavar='', default=2, help='target co-ordinates of z')
-parser.add_argument('-n', '--name', type=int, metavar='', required=True, default=1, help='numer of target name')
 parser.add_argument('-v', '--velocity', type=float, metavar='', default=2, help='velocity of moving target in m/s')
 parser.add_argument('-s', '--sdffile', type=str, metavar='',
                     default='/home/bartosz/catkin_ws/src/velocityraptor/models/no_gravity_iris_easy/no_gravity_iris_easy.sdf',
@@ -143,26 +136,58 @@ parser.add_argument('-m', '--mode', type=float, metavar='', default=2,
                     help='mode of moving target [1 - circle, 2 - square, 3 - line, else: state mode]')
 
 args, unknown = parser.parse_known_args()
-if __name__ == '__main__':
-    rospy.Subscriber('/gazebo/model_states', ModelStates, callback_processes)
 
-    rospy.init_node('target_control' + str(args.name), anonymous=False)
-    # rospy.loginfo(rosnode.get_node_names())
+class Subsriber:
+    def __init__(self):
+        self.actual_target_names = None
+        rospy.Subscriber('/gazebo/model_states', ModelStates, self.callback_processes)
+    def callback_processes(self, data):
+        self.actual_target_names = data.name
+    def loginfo(self):
+        return self.actual_target_names
+
+
+
+if __name__ == '__main__':
+    #here is init node with random name, bc if you run a lot of processes, they cannt name the same
+    rospy.init_node('target_control' + str(np.random.randint(1000)), anonymous=False)
+
     landmark_pose = Pose()
     landmark_pose.position.x = 0.5
     landmark_pose.orientation.x = landmark_pose.orientation.y \
         = landmark_pose.orientation.z = landmark_pose.orientation.w = 1
 
-    target_name = "target" + str(args.name)
+    index = 1
+    target_name = "target" + str(index)
+    a = Subsriber()
+
+    lista = []
+    for i in range(5):
+        b = a.loginfo()
+        rospy.loginfo(b)
+        lista.append(b)
+
+    for elem in lista:
+        if elem is None:
+            continue
+        else:
+            if elem[-1][0:-1] == 'target' and int(elem[-1][-1]) >= 1:
+                index = int(elem[-1][-1]) + 1
+                target_name = "target" + str(index)
+                print(index)
+            else:
+                break
+            break
+
     sdf = args.sdffile
     tx, ty, tz = str(args.x), str(args.y), str(args.z)
     cmd_line = 'rosrun gazebo_ros spawn_model' + ' -model ' + target_name + ' -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' + \
                tz + ' -R 0 -P 0 -Y 0 '
     system(cmd_line)
 
+
     pose_update = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     state = ModelState()
-    # state.model_name = 'target'
     state.model_name = target_name
 
     center_point = [0, 0, 5]
@@ -187,7 +212,9 @@ if __name__ == '__main__':
     freq_rate = count_rospy_rate(velocity, counter_iterations, distance)
     rate = rospy.Rate(freq_rate)
 
+
     while not rospy.is_shutdown():
+
         current_xy = points_trase[pos]
         desired_xy = [current_xy[0] + center_point[0], current_xy[1] + center_point[1]]
         position.position.x = desired_xy[0]
