@@ -9,45 +9,20 @@ from mavros_msgs.msg import GlobalPositionTarget
 from os import system
 import math
 import argparse
-
-
-class Subsriber:
-    def __init__(self):
-        self.actual_target_names = None
-        rospy.Subscriber('/gazebo/model_states', ModelStates, self.callback_processes)
-
-    def callback_processes(self, data):
-        self.actual_target_names = data.name
-
-    def loginfo(self):
-        return self.actual_target_names
-
+import rosnode
 
 if __name__ == '__main__':
-    rospy.init_node('target_control' + str(np.random.randint(1000)), anonymous=False)
+    list_str = ['/landmark_bridge', '/rosout', '/gazebo_gui', '/gazebo', '/target_control2', '/target_control3',
+                '/target_control5']
+    index_node = 1
+    filtered_nodes = list(filter(lambda x: '/target_control' in x, list_str))
 
-    a = Subsriber()
-    lista = []
-    for i in range(5):
-        b = a.loginfo()
-        rospy.loginfo(b)
-        lista.append(b)
-    print(lista)
-    new_index = 1
-    for elem in lista:
-        if elem is None:
-            continue
-        else:
-            if elem[-1][0:-1] == 'target' and int(elem[-1][-1]) >= 1:
-                new_index = int(elem[-1][-1]) + 1
-                print(new_index)
-            else:
-                break
-            print(3)
-            break
-    print(new_index)
-
-
-
-
-
+    if '/landmark_bridge' in list_str and len(filtered_nodes) == 0:
+        index_node += 1
+    else:
+        list_target_numbers = filtered_nodes
+        list_numbers = []
+        for word in list_target_numbers:
+            word_number = word.replace('/target_control', '')
+            list_numbers.append(int(word_number))
+        index_node = max(list_numbers) + 1

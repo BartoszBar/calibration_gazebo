@@ -9,7 +9,7 @@ from mavros_msgs.msg import GlobalPositionTarget
 from os import system
 import math
 import argparse
-
+import rosnode
 
 
 def circle(iter1=50, radius=30):
@@ -104,6 +104,7 @@ def local_to_global(lat_now=47.397742, lon_now=8.5455934, altitude_now=535.31291
     altitude_next = altitude_now + h
     return lat_res, lon_res, altitude_next
 
+
 def publisher(radar_local_x, radar_local_y, radar_local_z):
     target_position = Point()
     target_position_pub = rospy.Publisher(
@@ -137,20 +138,35 @@ parser.add_argument('-m', '--mode', type=float, metavar='', default=2,
 
 args, unknown = parser.parse_known_args()
 
+
 class Subsriber:
     def __init__(self):
         self.actual_target_names = None
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.callback_processes)
+
     def callback_processes(self, data):
         self.actual_target_names = data.name
-    def loginfo(self):
+
+    def get_names(self):
         return self.actual_target_names
 
 
-
 if __name__ == '__main__':
-    #here is init node with random name, bc if you run a lot of processes, they cannt name the same
-    rospy.init_node('target_control' + str(np.random.randint(1000)), anonymous=False)
+    get_nodes = rosnode.get_node_names()
+    index_node = 1
+    filtered_nodes = list(filter(lambda x: '/target_control' in x, get_nodes))
+
+    if '/landmark_bridge' in get_nodes and len(filtered_nodes) > 0:
+        list_target_numbers = filtered_nodes
+        list_numbers = []
+        for word in list_target_numbers:
+            word_number = word.replace('/target_control', '')
+            list_numbers.append(int(word_number))
+        index_node = max(list_numbers) + 1
+    else:
+        index_node += 1
+
+    rospy.init_node('target_control' + str(index_node), anonymous=False)
 
     landmark_pose = Pose()
     landmark_pose.position.x = 0.5
@@ -159,23 +175,15 @@ if __name__ == '__main__':
 
     index = 1
     target_name = "target" + str(index)
-    a = Subsriber()
+    subscribe_names = Subsriber()
 
-    lista = []
-    for i in range(5):
-        b = a.loginfo()
-        rospy.loginfo(b)
-        lista.append(b)
-
-    for elem in lista:
-        if elem is None:
-            continue
-        else:
-            if elem[-1][0:-1] == 'target' and int(elem[-1][-1]) >= 1:
-                index = int(elem[-1][-1]) + 1
+    while not rospy.is_shutdown():
+        model_names = subscribe_names.get_names()
+        if model_names is not None:
+            if 'target' in model_names[-1]:
+                target_number = model_names[-1].split('target')[1]
+                index = int(target_number) + 1
                 target_name = "target" + str(index)
-            else:
-                break
             break
 
     sdf = args.sdffile
@@ -183,7 +191,6 @@ if __name__ == '__main__':
     cmd_line = 'rosrun gazebo_ros spawn_model' + ' -model ' + target_name + ' -sdf -file ' + sdf + ' -x ' + tx + ' -y ' + ty + ' -z ' + \
                tz + ' -R 0 -P 0 -Y 0 '
     system(cmd_line)
-
 
     pose_update = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     state = ModelState()
@@ -210,7 +217,6 @@ if __name__ == '__main__':
 
     freq_rate = count_rospy_rate(velocity, counter_iterations, distance)
     rate = rospy.Rate(freq_rate)
-
 
     while not rospy.is_shutdown():
 
